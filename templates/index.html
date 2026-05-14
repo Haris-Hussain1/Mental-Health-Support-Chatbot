@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mental Health Support Chatbot</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Mental Health Support Chatbot</h1>
+            <p>How are you feeling today?</p>
+        </div>
+        
+        <div class="chat-window" id="chatWindow">
+            <div class="message bot-message">
+                <div class="message-content">
+                    Hello! I'm your mental health support Bot. I'm here to listen so feel free to share what's on your mind.
+                </div>
+            </div>
+        </div>
+        
+        <div class="input-area">
+            <form id="chatForm">
+                <input 
+                    type="text" 
+                    id="userInput" 
+                    placeholder="Type your message here..." 
+                    autocomplete="off"
+                    required
+                >
+                <button type="submit" id="sendButton">
+                    <span id="buttonText">Send</span>
+                    <span id="loadingIndicator" class="loading-indicator">
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                    </span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const chatForm = document.getElementById('chatForm');
+        const userInput = document.getElementById('userInput');
+        const chatWindow = document.getElementById('chatWindow');
+        const sendButton = document.getElementById('sendButton');
+        const buttonText = document.getElementById('buttonText');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            // Add user message to chat
+            addMessage(message, 'user-message');
+            userInput.value = '';
+            
+            // Show loading indicator
+            setLoading(true);
+            
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    addMessage('Sorry, something went wrong. Please try again.', 'bot-message');
+                } else {
+                    addMessage(data.response, 'bot-message');
+                }
+            } catch (error) {
+                addMessage('Sorry, I encountered an error. Please try again.', 'bot-message');
+                console.error('Error:', error);
+            } finally {
+                setLoading(false);
+                userInput.focus();
+            }
+        });
+
+        function addMessage(content, className) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${className}`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = content;
+            
+            messageDiv.appendChild(contentDiv);
+            chatWindow.appendChild(messageDiv);
+            
+            // Scroll to bottom
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function setLoading(isLoading) {
+            if (isLoading) {
+                buttonText.style.display = 'none';
+                loadingIndicator.style.display = 'inline-flex';
+                sendButton.disabled = true;
+            } else {
+                buttonText.style.display = 'inline';
+                loadingIndicator.style.display = 'none';
+                sendButton.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
